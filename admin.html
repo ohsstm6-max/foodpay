@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>先生用管理画面 | FoodPay</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Sans:wght@400;600;700&display=swap');
+  :root {
+    --primary: #00c853; --primary-dark: #009624; --primary-light: #e8f5e9;
+    --bg: #f0f4f8; --surface: #fff; --text: #1a1a2e;
+    --text-sub: #6b7280; --border: #e5e7eb;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
+
+  .header { background: #1a1a2e; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo { width: 44px; height: 44px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .header-title { font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 700; color: white; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: white; }
+  .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-danger:hover { background: #dc2626; }
+
+  .live-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,200,83,0.15); color: #69f0ae; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0,200,83,0.3); }
+  .live-dot { width: 6px; height: 6px; background: #69f0ae; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+  .main { padding: 28px 32px; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .stat-card { background: var(--surface); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); }
+  .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; }
+  .stat-label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; }
+  .stat-value { font-family: 'DM Sans', sans-serif; font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -1px; }
+  .stat-value .unit { font-size: 16px; color: var(--text-sub); }
+
+  .table-card { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+  .table-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .table-title { font-size: 16px; font-weight: 700; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; background: var(--primary-light); color: var(--primary-dark); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text-sub); background: #fafafa; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 16px 24px; font-size: 15px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafffe; }
+  .amount-cell { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 18px; color: var(--primary-dark); }
+
+  .no-data { padding: 60px; text-align: center; color: var(--text-sub); }
+  .no-data .emoji { font-size: 40px; margin-bottom: 16px; display: block; }
+
+  /* 接続エラー表示 */
+  #error-bar { display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px 20px; color: #dc2626; font-size: 14px; font-weight: 500; }
+
+  @media (max-width:600px) { .header { padding: 16px 20px; } .main { padding: 20px 16px; } th, td { padding: 12px 16px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">🍽️</div>
+    <div>
+      <div class="header-title">FoodPay 管理画面</div>
+      <div class="header-sub">生徒の支払い状況リアルタイム確認</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="live-badge"><div class="live-dot"></div>リアルタイム更新中</div>
+    <button class="btn btn-outline" onclick="exportCSV()">📥 CSV出力</button>
+    <button class="btn btn-danger" onclick="clearAll()">🗑️ 全消去</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="error-bar">⚠️ Firebase に接続できません。admin.html の FIREBASE_CONFIG を確認してください。</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;">👥</div>
+      <div class="stat-label">支払い人数</div>
+      <div class="stat-value"><span id="stat-count">0</span> <span class="unit">人</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;">💴</div>
+      <div class="stat-label">合計金額</div>
+      <div class="stat-value"><span class="unit">¥</span><span id="stat-total">0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff8e1;">📊</div>
+      <div class="stat-label">平均金額</div>
+      <div class="stat-value"><span class="unit">¥</span><span id="stat-avg">0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fce4ec;">🏆</div>
+      <div class="stat-label">最高金額</div>
+      <div class="stat-value"><span class="unit">¥</span><span id="stat-max">0</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">💳 支払い一覧（新しい順）</div>
+      <div class="badge" id="count-badge">0件</div>
+    </div>
+    <div id="table-body">
+      <div class="no-data"><span class="emoji">📡</span>Firebase に接続しています...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ▼▼▼ Firebase設定（index.htmlと同じものを貼る） ▼▼▼ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // =============================================
+  // ★ここを自分のFirebase設定に書き換えてください★
+  // （index.htmlと同じ設定を貼ってください）
+  // =============================================
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDksDihzmHfCEwgzsDXOI8-Ifee7MoYm3M",
+    authDomain:        "qrcode-pay-74fb0.firebaseapp.com",
+    databaseURL:       "https://qrcode-pay-74fb0-default-rtdb.firebaseio.com",
+    projectId:         "qrcode-pay-74fb0",
+    storageBucket:     "qrcode-pay-74fb0.firebasestorage.app",
+    messagingSenderId: "101470124084",
+    appId:             "1:101470124084:web:088e128c42b8d6bb703261"
+  };
+
+  const configured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+
+  if (!configured) {
+    document.getElementById('error-bar').style.display = 'block';
+    document.getElementById('table-body').innerHTML = `<div class="no-data"><span class="emoji">⚙️</span>Firebase の設定が必要です。<br>このファイルの FIREBASE_CONFIG を書き換えてください。</div>`;
+  } else {
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db  = getDatabase(app);
+    const paymentsRef = ref(db, 'payments');
+
+    // リアルタイム監視
+    onValue(paymentsRef, (snapshot) => {
+      const data = snapshot.val();
+      renderTable(data);
+    }, (error) => {
+      document.getElementById('error-bar').style.display = 'block';
+      console.error(error);
+    });
+
+    // 全消去
+    window.__clearAll = async () => {
+      if (confirm('⚠️ 全ての支払いデータを消去します。よろしいですか？')) {
+        await remove(paymentsRef);
+      }
+    };
+  }
+
+  function renderTable(data) {
+    const payments = data
+      ? Object.values(data).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+      : [];
+
+    const count = payments.length;
+    const total = payments.reduce((s, p) => s + (p.amount || 0), 0);
+    const avg   = count > 0 ? Math.round(total / count) : 0;
+    const max   = count > 0 ? Math.max(...payments.map(p => p.amount || 0)) : 0;
+
+    document.getElementById('stat-count').textContent = count;
+    document.getElementById('stat-total').textContent = total.toLocaleString();
+    document.getElementById('stat-avg').textContent   = avg.toLocaleString();
+    document.getElementById('stat-max').textContent   = max.toLocaleString();
+    document.getElementById('count-badge').textContent = `${count}件`;
+
+    const body = document.getElementById('table-body');
+    if (count === 0) {
+      body.innerHTML = `<div class="no-data"><span class="emoji">📱</span>まだ支払いがありません。<br>生徒がQRコードを読み込んで支払うと、ここにリアルタイムで表示されます。</div>`;
+      return;
+    }
+
+    body.innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>支払い日時</th><th>金額</th></tr></thead>
+        <tbody>
+          ${payments.map((p, i) => `
+            <tr>
+              <td style="color:var(--text-sub);font-size:13px">${count - i}</td>
+              <td>${p.time || '—'}</td>
+              <td class="amount-cell">¥${(p.amount || 0).toLocaleString()}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    // CSV用にグローバル保存
+    window.__payments = payments;
+  }
+</script>
+
+<script>
+  function clearAll() {
+    if (window.__clearAll) window.__clearAll();
+    else alert('Firebase が設定されていません');
+  }
+
+  function exportCSV() {
+    const payments = window.__payments || [];
+    if (payments.length === 0) { alert('データがありません'); return; }
+    const rows = [['番号', '支払い日時', '金額（円）']];
+    payments.forEach((p, i) => rows.push([i+1, p.time, p.amount]));
+    const csv  = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `foodpay_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+</script>
+</body>
+</html>

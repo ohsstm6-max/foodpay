@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お支払い | FoodPay</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Sans:wght@400;600;700&display=swap');
+  :root {
+    --primary: #00c853; --primary-dark: #009624; --primary-light: #e8f5e9;
+    --bg: #f5f7fa; --surface: #ffffff; --text: #1a1a2e;
+    --text-sub: #6b7280; --border: #e5e7eb;
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #setup-banner { position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; text-align: center; padding: 12px 20px; font-size: 13px; font-weight: 700; z-index: 999; display: none; }
+  .phone-frame { width: 100%; max-width: 400px; }
+  .screen { display: none; background: var(--surface); border-radius: 28px; box-shadow: var(--shadow-lg); overflow: hidden; min-height: 600px; flex-direction: column; }
+  .screen.active { display: flex; }
+  .app-header { background: var(--primary); padding: 20px 24px 16px; color: white; display: flex; align-items: center; gap: 12px; }
+  .app-logo { width: 36px; height: 36px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .app-name { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 20px; }
+  .app-sub { font-size: 11px; opacity: 0.85; margin-top: 1px; }
+
+  #screen-amount .content { padding: 28px 24px; flex: 1; display: flex; flex-direction: column; gap: 22px; }
+  .store-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-light); color: var(--primary-dark); font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px; width: fit-content; }
+  .amount-display { background: var(--bg); border-radius: 20px; padding: 22px; text-align: center; }
+  .amount-label { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
+  .amount-value { font-family: 'DM Sans', sans-serif; font-size: 46px; font-weight: 700; color: var(--text); letter-spacing: -2px; line-height: 1; }
+  .amount-value .yen { font-size: 20px; color: var(--text-sub); margin-right: 4px; }
+  .amount-input { width: 100%; padding: 16px 18px; font-size: 24px; font-family: 'DM Sans', sans-serif; font-weight: 600; border: 2px solid var(--border); border-radius: 14px; outline: none; text-align: right; color: var(--text); transition: border-color 0.2s; }
+  .amount-input:focus { border-color: var(--primary); }
+  .section-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .quick-amounts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick-btn { padding: 8px 14px; border: 2px solid var(--border); border-radius: 10px; background: white; font-size: 13px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif; color: var(--text); cursor: pointer; transition: all 0.15s; }
+  .quick-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+  .pay-btn-area { margin-top: auto; }
+  .pay-btn { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(0,200,83,0.35); }
+  .pay-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .pay-btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; transform: none; }
+
+  #screen-slide .content { padding: 32px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+  .slide-amount-display { text-align: center; }
+  .slide-amount-display .label { font-size: 14px; color: var(--text-sub); margin-bottom: 6px; }
+  .slide-amount-display .value { font-family: 'DM Sans', sans-serif; font-size: 52px; font-weight: 700; color: var(--text); letter-spacing: -2px; }
+  .slide-amount-display .yen { font-size: 24px; color: var(--text-sub); }
+  .slide-instruction { font-size: 14px; color: var(--text-sub); text-align: center; }
+  .slide-container { width: 100%; max-width: 320px; background: var(--primary-light); border-radius: 50px; height: 72px; position: relative; overflow: hidden; user-select: none; border: 2px solid rgba(0,200,83,0.3); }
+  .slide-track-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(0,200,83,0.3), rgba(0,200,83,0.1)); width: 0%; border-radius: 50px; }
+  .slide-thumb { position: absolute; left: 4px; top: 4px; width: 64px; height: 60px; background: var(--primary); border-radius: 46px; display: flex; align-items: center; justify-content: center; cursor: grab; box-shadow: 0 4px 16px rgba(0,200,83,0.4); z-index: 2; }
+  .slide-thumb svg { width: 28px; height: 28px; color: white; }
+  .slide-label { position: absolute; right: 0; left: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: 14px; font-weight: 700; color: var(--primary-dark); pointer-events: none; padding-left: 64px; }
+  .back-btn { padding: 14px 32px; background: transparent; border: 2px solid var(--border); border-radius: 14px; font-size: 15px; font-weight: 600; font-family: 'Noto Sans JP', sans-serif; color: var(--text-sub); cursor: pointer; transition: all 0.2s; }
+  .back-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  #screen-complete .content { padding: 40px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; }
+  .success-icon { width: 96px; height: 96px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-icon svg { width: 52px; height: 52px; color: white; }
+  .complete-title { font-size: 26px; font-weight: 900; color: var(--text); }
+  .complete-sub { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
+  .complete-amount-box { background: var(--bg); border-radius: 20px; padding: 24px 40px; width: 100%; }
+  .complete-amount-label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; }
+  .complete-amount-value { font-family: 'DM Sans', sans-serif; font-size: 44px; font-weight: 700; color: var(--primary-dark); letter-spacing: -2px; }
+  .complete-time { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+
+  .confetti-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 100; overflow: hidden; }
+  .confetti-piece { position: absolute; animation: confettiFall linear forwards; }
+  @keyframes confettiFall { from { transform: translateY(-20px) rotate(0deg); opacity: 1; } to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  .sending-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .sending-overlay.show { display: flex; }
+  .sending-box { background: white; border-radius: 20px; padding: 32px 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sending-text { font-size: 15px; font-weight: 700; color: var(--text); }
+</style>
+</head>
+<body>
+
+<div id="setup-banner">⚠️ Firebase の設定がまだです。index.html 内の FIREBASE_CONFIG を書き換えてください。</div>
+
+<div class="phone-frame">
+  <div class="screen active" id="screen-amount">
+    <div class="app-header">
+      <div class="app-logo">🍽️</div>
+      <div><div class="app-name">FoodPay</div><div class="app-sub">模擬QRコード決済</div></div>
+    </div>
+    <div class="content">
+      <div class="store-tag">🏪 授業レストラン</div>
+      <div class="amount-display">
+        <div class="amount-label">お支払い金額</div>
+        <div class="amount-value"><span class="yen">¥</span><span id="preview-num">0</span></div>
+      </div>
+      <div>
+        <div class="section-title" style="margin-bottom:8px">金額を入力してください（円）</div>
+        <input type="number" class="amount-input" id="amount-input" placeholder="例: 850" min="1" max="99999" inputmode="numeric"/>
+      </div>
+      <div>
+        <div class="section-title">よく使う金額</div>
+        <div class="quick-amounts" id="quick-amounts"></div>
+      </div>
+      <div class="pay-btn-area">
+        <button class="pay-btn" id="to-slide-btn" disabled onclick="goToSlide()">お支払いへ進む</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-slide">
+    <div class="app-header">
+      <div class="app-logo">🍽️</div>
+      <div><div class="app-name">FoodPay</div><div class="app-sub">スライドして支払い</div></div>
+    </div>
+    <div class="content">
+      <div class="slide-amount-display">
+        <div class="label">お支払い金額</div>
+        <div class="value"><span class="yen">¥</span><span id="slide-amount-num">0</span></div>
+      </div>
+      <div class="slide-instruction">🔒 スライドして支払いを確定してください</div>
+      <div class="slide-container" id="slide-container">
+        <div class="slide-track-fill" id="slide-fill"></div>
+        <div class="slide-thumb" id="slide-thumb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        <div class="slide-label" id="slide-label">スライドして支払う →</div>
+      </div>
+      <button class="back-btn" onclick="goBack()">← 金額を変更する</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-complete">
+    <div class="app-header" style="background:#009624;">
+      <div class="app-logo">🍽️</div>
+      <div><div class="app-name">FoodPay</div><div class="app-sub">お支払い完了</div></div>
+    </div>
+    <div class="content">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <div class="complete-title">支払い完了！</div>
+      <div class="complete-sub">お支払いありがとうございました。<br>ごゆっくりどうぞ 😊</div>
+      <div class="complete-amount-box">
+        <div class="complete-amount-label">お支払い金額</div>
+        <div class="complete-amount-value" id="complete-amount-num">¥0</div>
+        <div class="complete-time" id="complete-time"></div>
+      </div>
+      <button class="back-btn" onclick="resetAll()">🔄 最初に戻る</button>
+    </div>
+  </div>
+</div>
+
+<div class="sending-overlay" id="sending-overlay">
+  <div class="sending-box">
+    <div class="spinner"></div>
+    <div class="sending-text">送信中...</div>
+  </div>
+</div>
+<div class="confetti-container" id="confetti-container"></div>
+
+<!-- ▼▼▼ Firebase設定 ▼▼▼ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // =============================================
+  // ★ここを自分のFirebase設定に書き換えてください★
+  // =============================================
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDksDihzmHfCEwgzsDXOI8-Ifee7MoYm3M",
+    authDomain:        "qrcode-pay-74fb0.firebaseapp.com",
+    databaseURL:       "https://qrcode-pay-74fb0-default-rtdb.firebaseio.com",
+    projectId:         "qrcode-pay-74fb0",
+    storageBucket:     "qrcode-pay-74fb0.firebasestorage.app",
+    messagingSenderId: "101470124084",
+    appId:             "1:101470124084:web:088e128c42b8d6bb703261"
+  };
+
+  const configured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+  if (!configured) {
+    document.getElementById('setup-banner').style.display = 'block';
+    document.body.style.paddingTop = '48px';
+  }
+
+  if (configured) {
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db  = getDatabase(app);
+    window.__db  = db;
+    window.__ref = ref;
+    window.__push = push;
+    window.__ts  = serverTimestamp;
+  }
+  window.__fbReady = true;
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
+
+<script>
+  const QUICK = [500, 750, 850, 1000, 1200, 1500];
+  let currentAmount = 0;
+
+  QUICK.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'quick-btn';
+    b.textContent = `¥${v.toLocaleString()}`;
+    b.onclick = () => { document.getElementById('amount-input').value = v; updatePreview(v); };
+    document.getElementById('quick-amounts').appendChild(b);
+  });
+
+  document.getElementById('amount-input').addEventListener('input', e => updatePreview(parseInt(e.target.value) || 0));
+
+  function updatePreview(v) {
+    document.getElementById('preview-num').textContent = v.toLocaleString();
+    document.getElementById('to-slide-btn').disabled = v <= 0;
+    currentAmount = v;
+  }
+
+  function goToSlide() {
+    document.getElementById('slide-amount-num').textContent = currentAmount.toLocaleString();
+    showScreen('screen-slide');
+    initSlide();
+  }
+  function goBack() { showScreen('screen-amount'); }
+  function resetAll() { document.getElementById('amount-input').value = ''; updatePreview(0); showScreen('screen-amount'); }
+  function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+  function initSlide() {
+    const container = document.getElementById('slide-container');
+    const thumb = document.getElementById('slide-thumb');
+    const fill  = document.getElementById('slide-fill');
+    const label = document.getElementById('slide-label');
+    const maxX  = container.offsetWidth - thumb.offsetWidth - 8;
+    let dragging = false, startX = 0, curX = 0, done = false;
+
+    function pos(x) {
+      x = Math.max(0, Math.min(x, maxX)); curX = x;
+      thumb.style.left = (4 + x) + 'px';
+      const p = (x / maxX) * 100;
+      fill.style.width = p + '%';
+      label.style.opacity = Math.max(0, 1 - p / 50);
+      return p;
+    }
+
+    thumb.onmousedown = e => { if (done) return; e.preventDefault(); dragging = true; startX = e.clientX - curX; };
+    document.onmousemove = e => { if (!dragging) return; if (pos(e.clientX - startX) >= 95) { dragging = false; finish(); } };
+    document.onmouseup = () => { if (!dragging) return; dragging = false; if (curX < maxX * 0.95) back(); };
+    thumb.ontouchstart = e => { if (done) return; e.preventDefault(); dragging = true; startX = e.touches[0].clientX - curX; };
+    document.ontouchmove = e => { if (!dragging) return; e.preventDefault(); if (pos(e.touches[0].clientX - startX) >= 95) { dragging = false; finish(); } };
+    document.ontouchend = () => { if (!dragging) return; dragging = false; if (curX < maxX * 0.95) back(); };
+
+    function back() { let x = curX; const f = () => { x *= 0.75; pos(x); if (x > 1) requestAnimationFrame(f); else pos(0); }; requestAnimationFrame(f); }
+    function finish() { done = true; pos(maxX); completePayment(); }
+    pos(0);
+  }
+
+  async function completePayment() {
+    const now = new Date();
+    const t = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    document.getElementById('complete-amount-num').textContent = `¥${currentAmount.toLocaleString()}`;
+    document.getElementById('complete-time').textContent = t;
+
+    if (window.__db) {
+      document.getElementById('sending-overlay').classList.add('show');
+      try {
+        await window.__push(window.__ref(window.__db, 'payments'), {
+          amount: currentAmount, time: t, timestamp: window.__ts()
+        });
+      } catch(e) { console.error(e); }
+      document.getElementById('sending-overlay').classList.remove('show');
+    }
+
+    showScreen('screen-complete');
+    confetti();
+  }
+
+  function confetti() {
+    const c = document.getElementById('confetti-container');
+    c.innerHTML = '';
+    const cols = ['#00c853','#69f0ae','#ffd600','#ff6d00','#2196f3','#e91e63'];
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `left:${Math.random()*100}%;background:${cols[~~(Math.random()*cols.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'0'};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;`;
+      c.appendChild(el);
+    }
+    setTimeout(() => { c.innerHTML = ''; }, 4000);
+  }
+</script>
+</body>
+</html>

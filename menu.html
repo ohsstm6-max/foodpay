@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>メニュー表 | 授業レストラン</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --cream: #fdf8f0;
+    --brown: #4a3728;
+    --brown-light: #7a5c45;
+    --gold: #c8a96e;
+    --border-color: #d4b896;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: #e8e0d4;
+    padding: 32px 20px;
+  }
+
+  /* 編集コントロール（印刷時は非表示） */
+  .edit-controls {
+    max-width: 700px;
+    margin: 0 auto 24px;
+    background: #1a1a2e;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .edit-info {
+    color: white;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+  }
+  .edit-info strong { color: #69f0ae; }
+  .edit-btn, .print-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .edit-btn { background: #ffd600; color: #1a1a2e; }
+  .edit-btn:hover { background: #ffc107; }
+  .print-btn { background: #00c853; color: white; }
+  .print-btn:hover { background: #009624; }
+
+  /* メニュー本体 */
+  .menu-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+    background: var(--cream);
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+  }
+
+  .menu-top-border {
+    height: 8px;
+    background: repeating-linear-gradient(90deg, var(--brown), var(--brown) 10px, var(--gold) 10px, var(--gold) 20px);
+  }
+
+  .menu-inner {
+    padding: 40px 48px 48px;
+  }
+
+  .menu-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 2px solid var(--gold);
+    position: relative;
+  }
+  .menu-header::before, .menu-header::after {
+    content: '✦';
+    position: absolute;
+    bottom: -12px;
+    font-size: 16px;
+    color: var(--gold);
+    background: var(--cream);
+    padding: 0 8px;
+  }
+  .menu-header::before { left: 50%; transform: translateX(-50%); }
+  .menu-header::after { display: none; }
+
+  .restaurant-name {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--brown);
+    letter-spacing: 6px;
+    margin-bottom: 6px;
+  }
+  .restaurant-sub {
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown-light);
+    letter-spacing: 2px;
+  }
+
+  /* カテゴリ */
+  .category {
+    margin-bottom: 36px;
+  }
+  .category-title {
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .category-title::before { content: ''; display: block; width: 20px; height: 2px; background: var(--gold); }
+
+  .menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--border-color);
+  }
+  .menu-item:last-child { border-bottom: none; }
+
+  .item-left { flex: 1; }
+  .item-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown);
+    margin-bottom: 4px;
+  }
+  .item-desc {
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown-light);
+    line-height: 1.5;
+  }
+
+  .item-price {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--brown);
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .item-price .yen { font-size: 13px; margin-right: 2px; }
+
+  .menu-footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 2px solid var(--gold);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    color: var(--brown-light);
+    line-height: 1.8;
+  }
+
+  /* 編集モーダル */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .modal p {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  .edit-item-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: start;
+  }
+  .edit-label {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    padding-top: 10px;
+  }
+  .edit-price-input {
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    text-align: right;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .edit-price-input:focus { border-color: #00c853; }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .modal-save {
+    flex: 1;
+    padding: 14px;
+    background: #00c853;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+  .modal-cancel {
+    padding: 14px 24px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .edit-controls { display: none !important; }
+    .menu-wrapper { box-shadow: none; border: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 編集コントロール -->
+<div class="edit-controls">
+  <div class="edit-info">
+    📋 <strong>先生用：</strong>「金額を編集」ボタンで価格を変更できます
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button class="edit-btn" onclick="openEdit()">✏️ 金額を編集</button>
+    <button class="print-btn" onclick="window.print()">🖨️ 印刷する</button>
+  </div>
+</div>
+
+<!-- メニュー本体 -->
+<div class="menu-wrapper" id="menu-wrapper">
+  <div class="menu-top-border"></div>
+  <div class="menu-inner">
+    <div class="menu-header">
+      <div class="restaurant-name" id="rest-name">授業レストラン</div>
+      <div class="restaurant-sub">LUNCH MENU</div>
+    </div>
+
+    <div id="menu-content">
+      <!-- JSで生成 -->
+    </div>
+
+    <div class="menu-footer">
+      ※ 表示価格は税込みです<br>
+      ※ このメニューは授業用の模擬メニューです
+    </div>
+  </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="modal" onclick="closeEdit(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✏️ メニュー金額の編集</h2>
+    <p>各メニューの金額を変更して「保存する」を押してください。</p>
+    <div id="edit-fields"></div>
+    <div class="modal-actions">
+      <button class="modal-save" onclick="saveEdit()">💾 保存する</button>
+      <button class="modal-cancel" onclick="closeEdit()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== メニューデータ（先生はここも直接編集可） =====
+let menuData = [
+  {
+    category: "🍱 ランチセット",
+    items: [
+      { name: "日替わりランチ", desc: "本日のメイン＋ご飯＋スープ＋サラダ", price: 850 },
+      { name: "ハンバーグランチ", desc: "デミグラスソース＋ライス＋サラダ", price: 980 },
+      { name: "魚のフライランチ", desc: "タルタルソース添え＋ライス＋みそ汁", price: 900 },
+    ]
+  },
+  {
+    category: "🍝 パスタ・麺類",
+    items: [
+      { name: "ナポリタン", desc: "懐かしい味の定番パスタ", price: 750 },
+      { name: "カルボナーラ", desc: "クリーミーなチーズソース", price: 880 },
+      { name: "ざるそば", desc: "薬味・つゆ付き", price: 680 },
+    ]
+  },
+  {
+    category: "🍜 ご飯もの",
+    items: [
+      { name: "カレーライス", desc: "中辛・サラダ付き", price: 780 },
+      { name: "チャーハン", desc: "スープ付き", price: 750 },
+      { name: "親子丼", desc: "みそ汁・漬物付き", price: 820 },
+    ]
+  },
+  {
+    category: "🥤 ドリンク",
+    items: [
+      { name: "コーヒー", desc: "ホット・アイス選べます", price: 300 },
+      { name: "オレンジジュース", desc: "果汁100%", price: 280 },
+      { name: "緑茶", desc: "ホット・アイス選べます", price: 200 },
+    ]
+  }
+];
+
+// LocalStorageから読み込み
+function loadMenu() {
+  try {
+    const saved = localStorage.getItem('foodpay_menu');
+    if (saved) menuData = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveMenu() {
+  localStorage.setItem('foodpay_menu', JSON.stringify(menuData));
+}
+
+function renderMenu() {
+  const container = document.getElementById('menu-content');
+  container.innerHTML = menuData.map(cat => `
+    <div class="category">
+      <div class="category-title">${cat.category}</div>
+      ${cat.items.map(item => `
+        <div class="menu-item">
+          <div class="item-left">
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.desc}</div>
+          </div>
+          <div class="item-price"><span class="yen">¥</span>${item.price.toLocaleString()}</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function openEdit() {
+  const fields = document.getElementById('edit-fields');
+  let html = '';
+  menuData.forEach((cat, ci) => {
+    cat.items.forEach((item, ii) => {
+      html += `
+        <div class="edit-item-row">
+          <div class="edit-label">${item.name}</div>
+          <input class="edit-price-input" type="number" data-cat="${ci}" data-item="${ii}" value="${item.price}" min="1">
+        </div>`;
+    });
+  });
+  fields.innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeEdit(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+function saveEdit() {
+  document.querySelectorAll('.edit-price-input').forEach(input => {
+    const ci = parseInt(input.dataset.cat);
+    const ii = parseInt(input.dataset.item);
+    const v = parseInt(input.value);
+    if (!isNaN(v) && v > 0) menuData[ci].items[ii].price = v;
+  });
+  saveMenu();
+  renderMenu();
+  document.getElementById('modal').classList.remove('open');
+}
+
+loadMenu();
+renderMenu();
+</script>
+</body>
+</html>
