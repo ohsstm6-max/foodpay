@@ -270,7 +270,49 @@
     }
 
     showScreen('screen-complete');
+    playPaySound();
     confetti();
+  }
+
+  function playPaySound() {
+    // ① ポンッという効果音（Web Audio APIで生成）
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // 低音ポン
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1); gain1.connect(ctx.destination);
+      osc1.frequency.setValueAtTime(520, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+      gain1.gain.setValueAtTime(0.5, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.18);
+
+      // 高音ポン（少し遅らせて）
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      osc2.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.25);
+      gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc2.start(ctx.currentTime + 0.1);
+      osc2.stop(ctx.currentTime + 0.3);
+    } catch(e) {}
+
+    // ② 「Gペイ」音声読み上げ（0.35秒後）
+    setTimeout(() => {
+      try {
+        const utter = new SpeechSynthesisUtterance('Gペイ');
+        utter.lang = 'ja-JP';
+        utter.rate = 0.9;
+        utter.pitch = 1.2;
+        utter.volume = 1.0;
+        speechSynthesis.speak(utter);
+      } catch(e) {}
+    }, 350);
   }
 
   function confetti() {
