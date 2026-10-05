@@ -302,17 +302,14 @@
       osc2.stop(ctx.currentTime + 0.3);
     } catch(e) {}
 
-    // ② 「Gペイ」音声読み上げ（0.35秒後）
+    // ② 「Gペイ」mp3再生（効果音の後に再生）
     setTimeout(() => {
       try {
-        const utter = new SpeechSynthesisUtterance('Gペイ');
-        utter.lang = 'ja-JP';
-        utter.rate = 0.9;
-        utter.pitch = 1.2;
-        utter.volume = 1.0;
-        speechSynthesis.speak(utter);
+        const audio = new Audio('gpay.mp3');
+        audio.volume = 1.0;
+        audio.play();
       } catch(e) {}
-    }, 350);
+    }, 300);
   }
 
   function confetti() {
